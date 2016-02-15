@@ -1,0 +1,31 @@
+@startuml
+
+class Plateau {
+}
+
+class Position {
+}
+
+class Rover {
+    +Orientation bearing;
+    +rotate(dir);
+    +advance();
+}
+
+class RoverInstructions {
+}
+
+class RoverInstructionInterpreter {
+}
+
+class InputFileParser {
+}
+
+InputFileParser -- "1" Plateau : creates
+InputFileParser -- Rover : creates
+InputFileParser -- RoverInstructions : generates
+RoverInstructions -- RoverInstructionInterpreter : inputs into
+RoverInstructionInterpreter -- Rover : directs
+Plateau -- "nxm" Position : contains
+Rover -- "1" Position : occupies
+@enduml
