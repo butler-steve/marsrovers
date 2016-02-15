@@ -34,7 +34,8 @@ Navigation instructions i.e a string containing ('L', 'R', 'M').
 `LMLMLMLMM`
 
 ## Sample Input
-```Plateau:5 5
+```
+Plateau:5 5
 Rover1 Landing:1 2 N
 Rover1 Instructions:LMLMLMLMM
 Rover2 Landing:3 3 E
@@ -42,7 +43,8 @@ Rover2 Instructions:MMRMMRMRRM
 ```
 
 ### Expected Output:
-```Rover1:1 3 N
+```
+Rover1:1 3 N
 Rover2:5 1 E
 ```
 ## Task
@@ -60,15 +62,18 @@ I constructed a solution to the problem using Behaviour-Driven Development (BDD)
 ### Setup Steps
 
 Install all dependent pip packages: 
-```> pip install -r requirements.txt
+```
+> pip install -r requirements.txt
 ```
 
 Install modified version of mockito (because the real version fails to install due to an error):
-```> cd marsrovers
+```
+> cd marsrovers
 > pip install -e pip-cache/mockito-0.5.2
 ```
 
 Run the spec files using mamba:
-```> mamba src/spec/spec*.py
+```
+> mamba src/spec/spec*.py
 ```
 
