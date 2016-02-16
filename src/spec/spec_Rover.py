@@ -12,14 +12,14 @@ def setupRoverArguments(self):
     self.initial_bearing = 'E'
 
 with context(Rover):
-    with it('should take an initial position and bearing as arguments'):
+    with it('should take a name, an initial position, and initial bearing as arguments'):
         setupRoverArguments(self)
-        self.sut = Rover(self.initial_position, self.initial_bearing)
+        self.sut = Rover('Rover1', self.initial_position, self.initial_bearing)
     with context('if an invalid bearing is supplied,'):
         with it('should raise an InvalidDirectionError'):
             setupRoverArguments(self)
             try:
-                self.sut = Rover(self.initial_position, 'A')
+                self.sut = Rover('Rover1', self.initial_position, 'A')
                 assert(False)
             except Plateau.InvalidDirectionError:
                 pass
@@ -27,7 +27,7 @@ with context(Rover):
     with context('methods:'):
         with before.each:
             setupRoverArguments(self)
-            self.sut = Rover(self.initial_position, self.initial_bearing)
+            self.sut = Rover('Rover1', self.initial_position, self.initial_bearing)
 
         with context('.getPosition()'):
             with it('should exist'):
@@ -40,6 +40,13 @@ with context(Rover):
                 self.sut.getBearing.should.be.callable
             with it('should return the supplied bearing'):
                 self.sut.getBearing().should.equal(self.initial_bearing)
+
+        with context('.getName()'):
+            with it('should exist'):
+                self.sut.getName.should.be.callable
+            with it('should return the supplied name'):
+                self.sut.getName().should.equal('Rover1')
+
 
         with context('.rotate()'):
             with it('should exist'):
@@ -84,7 +91,7 @@ with context(Rover):
         with context('.advance()'):
             with before.each:
                 self.mock_position = mock()
-                self.sut = Rover(self.mock_position, self.initial_bearing)
+                self.sut = Rover('Rover1', self.mock_position, self.initial_bearing)
             with it('should exist'):
                 self.sut.advance.should.be.callable
             with it('should invoke fromHere() method on current position'):

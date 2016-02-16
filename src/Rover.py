@@ -1,16 +1,21 @@
 from Plateau import *
 
 class Rover:
-    def __init__(self, initial_position, initial_bearing):
+    def __init__(self, name, initial_position, initial_bearing):
         Plateau.Position.raiseIfNotAValidDirection(initial_bearing)
+
         self._bearing = initial_bearing
         self._position = initial_position
+        self._name = name
 
     def getPosition(self):
         return self._position.X(), self._position.Y()
 
     def getBearing(self):
         return self._bearing
+
+    def getName(self):
+        return self._name
 
     def rotate(self, is_counterCW = False):
         if type(is_counterCW) is not type(True):
