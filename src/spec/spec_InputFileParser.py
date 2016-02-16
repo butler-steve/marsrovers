@@ -94,6 +94,8 @@ with context(InputFileParser.ParseState):
             InputFileParser.ParseState.Result.FAIL.should_not.be.none
 
 with context(InputFileParser.PlateauConfigState):
+    with it('should exist'):
+        InputFileParser.PlateauConfigState.should.be.callable
     with before.each:
         self.callback = Mock()
         self.sut = InputFileParser.PlateauConfigState(self.callback)
@@ -121,4 +123,66 @@ with context(InputFileParser.PlateauConfigState):
                     self.sut.parseString('Plateau:5 5').should.equal(InputFileParser.ParseState.Result.SUCCESS)
                 with it('should ignore >1 whitespace characters between tokens'):
                     self.sut.parseString('Plateau:  \t 29\t\t58   ').should.equal(InputFileParser.ParseState.Result.SUCCESS)
+
+with context(InputFileParser.RoverLandingState):
+    with it('should exist'):
+        InputFileParser.RoverLandingState.should.be.callable
+    with context('methods:'):
+        with before.each:
+            self.callback = Mock()
+            self.sut = InputFileParser.RoverLandingState(self.callback)
+        with context('.getConfig()'):
+            with it('should exist'):
+                self.sut.getConfig.should.be.callable
+        with context('.getName()'):
+            with it('should exist'):
+                self.sut.getName.should.be.callable
+        with context('.parseString()'):
+            with it('should take a string argument'):
+                self.sut.parseString('Rover1 Landing:1 2 N')
+            with context('if provided string does not contain "Landing:"'):
+                with it('should return a FAIL result'):
+                    self.sut.parseString('Rover1 Blanding:1 3 N').should.equal(InputFileParser.ParseState.Result.FAIL)
+            with context('if provided string does contain "Landing:"'):
+                with it('should return the string prefix from getName()'):
+                    test_name = "    This is a name    "
+                    self.sut.parseString('{0}Landing:8 9 Z'.format(test_name))
+                    self.sut.getName().should.equal(test_name.rstrip().lstrip())
+                with context('if provided string has a number pair (x,y) and character z following colon,'):
+                    with it('should return (x,y,z) from getConfig()'):
+                        self.sut.parseString('Rover1 Landing:8 9 Z')
+                        self.sut.getConfig().should.equal((8,9,'Z'))
+                    with it('should return a SUCCESS result'):
+                        self.sut.parseString('Rover1 Landing:8 9 Z').should.equal(InputFileParser.ParseState.Result.SUCCESS)
+
+with context(InputFileParser.RoverInstructionsState):
+    with it('should exist'):
+        InputFileParser.RoverInstructionsState.should.be.callable
+    with it('should take two arguments: a callback and a tuple'):
+        self.sut = InputFileParser.RoverInstructionsState(Mock(), ('Rover1', 8, 9, 'Z'))
+    with context('methods:'):
+        with before.each:
+            self.callback = Mock()
+            self.rover_config = ('Rover1', 8, 9, 'Z')
+            self.sut = InputFileParser.RoverInstructionsState(self.callback, self.rover_config)
+        with context('.parseString()'):
+            with it('should exist'):
+                self.sut.parseString.should.be.callable
+            with it('should take a string argument'):
+                self.sut.parseString('Rover1 Instructions:MMRMMRMRRM')
+            with context('if provided string does not contain "Instructions:"'):
+                with it('should return a FAIL result'):
+                    self.sut.parseString('Rover1 Binstructions:MMRMMRMRRM').should.equal(InputFileParser.ParseState.Result.FAIL)
+            with context('if provided string does contain "Instructions:"'):
+                with context('if name does not match provided config info'):
+                    with it('should return a FAIL result'):
+                        self.sut.parseString('Rover2 Instructions:MMRMMRMRRM').should.equal(InputFileParser.ParseState.Result.FAIL)
+                with context('if name does match provided config info'):
+                    with it('should pass the rover_config and string contents following colon to supplied callback, with command CREATE_ROVER'):
+                        rover_instructions = 'MMRMMRMRRM'
+                        self.sut.parseString('{0} Instructions: {1}'.format(self.rover_config[0], rover_instructions))
+                        expected_args = [InputFileParser.RoverInstructionsState.Commands.CREATE_ROVER] + list(self.rover_config) + [rover_instructions]
+                        self.callback.assert_called_with(*expected_args)
+                    with it('should return a SUCCESS result'):
+                        self.sut.parseString('Rover1 Instructions:MMRMMRMRRM').should.equal(InputFileParser.ParseState.Result.SUCCESS)
 
