@@ -4,21 +4,21 @@ from sure import *
 from mock import *
 
 with context(InputFileParser):
-    with it('should exist and receive a single argument'):
-        self.sut = InputFileParser('not really a callback')
+    with it('should exist and two arguments'):
+        self.sut = InputFileParser('not really a callback', 'not really a filename')
     with it('should create a PlateauConfigState'):
         with patch('InputFileParser.InputFileParser.PlateauConfigState') as mock_PlateauConfigState:
-            self.sut = InputFileParser('not really a callback')
+            self.sut = InputFileParser('not really a callback', 'not really a filename')
             mock_PlateauConfigState.called.should.equal(True)
     with it('should pass argument into PlateauConfigState'):
         with patch('InputFileParser.InputFileParser.PlateauConfigState') as mock_PlateauConfigState:
             test_argument = 'not really a callback'
-            self.sut = InputFileParser(test_argument)
+            self.sut = InputFileParser(test_argument, 'test filename')
             mock_PlateauConfigState.assert_called_with(test_argument)
 
     with context('methods:'):
         with before.each:
-            self.sut = InputFileParser(None)
+            self.sut = InputFileParser(None, '')
         with context('.getAllInputLines()'):
             with it('should exist'):
                 self.sut.getAllInputLines.should.be.callable

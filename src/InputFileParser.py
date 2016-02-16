@@ -67,12 +67,15 @@ class InputFileParser:
             self._command_callback(*callback_commands)
             return self.Result.SUCCESS
 
-    def __init__(self, command_callback):
+    def __init__(self, command_callback, input_filename):
         self.command_callback = command_callback
+        self.input_filename = input_filename
         self.current_state = InputFileParser.PlateauConfigState(command_callback)
 
     def getAllInputLines(self):
-        pass
+        with open(self.input_filename, encoding='utf-8') as input_file:
+            for each_line in input_file:
+                yield each_line
 
     def parseInputFile(self):
         for input_line in self.getAllInputLines():
@@ -93,7 +96,8 @@ class InputFileParser:
                 invalid_result = True
         elif type(self.current_state) is InputFileParser.RoverLandingState:
             if current_state_result is InputFileParser.ParseState.Result.SUCCESS:
-                self.current_state = InputFileParser.RoverInstructionsState(self.command_callback)
+                input_args = [self.current_state.getName()] + list(self.current_state.getConfig())
+                self.current_state = InputFileParser.RoverInstructionsState(self.command_callback, tuple(input_args))
             elif current_state_result is not InputFileParser.ParseState.Result.FAIL:
                 invalid_result = True
         elif type(self.current_state) is InputFileParser.RoverInstructionsState:
