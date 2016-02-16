@@ -30,31 +30,14 @@ with context(InputFileParser):
                     mock_getAllInputLines.return_value = []
                     self.sut.parseInputFile()
                     mock_getAllInputLines.called.should.equal(True)
-            with it('should continue to invoke getAllInputLines() until it returns EOF'):
-                with patch('InputFileParser.InputFileParser.getAllInputLines') as mock_getAllInputLines:
-                    return_values = [
-                            (InputFileParser.FileStates.OK, 'one'),
-                            (InputFileParser.FileStates.OK, 'two'),
-                            (InputFileParser.FileStates.OK, 'three'),
-                            (InputFileParser.FileStates.EOF, 'four'),
-                            (InputFileParser.FileStates.OK, 'five')
-                        ]
-                    num_calls = 0
-                    def side_effect():
-                        nonlocal num_calls
-                        while True:
-                            this_value = return_values[num_calls % len(return_values)]
-                            num_calls += 1
-                            yield this_value
-                    mock_getAllInputLines.side_effect = side_effect
-                    self.sut.parseInputFile()
-                    num_calls.should.equal(4)
-
             with it('should invoke parseInputLine() method with the current input line'):
                 with patch('InputFileParser.InputFileParser.getAllInputLines') as mock_getAllInputLines:
                     with patch('InputFileParser.InputFileParser.parseInputLine') as mock_parseInputLine:
                         test_input_line = 'atestline'
-                        mock_getAllInputLines.return_value = [(InputFileParser.FileStates.OK, test_input_line)]
+                        def side_effect():
+                            nonlocal test_input_line
+                            return [test_input_line]
+                        mock_getAllInputLines.side_effect = side_effect
 
                         self.sut.parseInputFile()
                         self.sut.parseInputLine.assert_called_with(test_input_line)
@@ -62,7 +45,8 @@ with context(InputFileParser):
             with it('should exist'):
                 self.sut.parseInputLine.should.be.callable
             with it('should take a string argument'):
-                self.sut.parseInputLine('test string')
+                with patch('InputFileParser.InputFileParser.transitionState') as mock_transitionState:
+                    self.sut.parseInputLine('test string')
             with it('should pass input string as argument to .parseString() method of current state object'):
                 test_input_string = 'this is a test input string'
                 self.sut.current_state = Mock()
@@ -80,7 +64,60 @@ with context(InputFileParser):
             with it('should exist'):
                 self.sut.transitionState.should.be.callable
             with it('should take an argument'):
-                self.sut.transitionState('test string')
+                self.sut.transitionState(InputFileParser.ParseState.Result.SUCCESS)
+            with context('if current state is PlateauConfigState,'):
+                with before.each:
+                    self.sut.current_state = InputFileParser.PlateauConfigState(self.sut.command_callback)
+                with context('if result argument is SUCCESS'):
+                    with it('should set the current state to RoverLandingState'):
+                        with patch('InputFileParser.InputFileParser.RoverLandingState') as mock_RoverLandingState:
+                            stub_object = Mock()
+                            mock_RoverLandingState.return_value = stub_object
+                            self.sut.transitionState(InputFileParser.ParseState.Result.SUCCESS)
+                            mock_RoverLandingState.called.should.equal(True)
+                            self.sut.current_state.should.be(stub_object)
+                with context('if result argument is FAIL'):
+                    with it('should raise BadFileFormatError'):
+                        try:
+                            self.sut.transitionState(InputFileParser.ParseState.Result.FAIL)
+                            assert(False)
+                        except InputFileParser.BadFileFormatError:
+                            pass
+            with context('if current state is RoverLandingState,'):
+                with before.each:
+                    self.sut.current_state = InputFileParser.RoverLandingState(self.sut.command_callback)
+                with context('if result argument is SUCCESS'):
+                    with it('should set the current state to RoverInstructionsState'):
+                        with patch('InputFileParser.InputFileParser.RoverInstructionsState') as mock_RoverInstructionsState:
+                            stub_object = Mock()
+                            mock_RoverInstructionsState.return_value = stub_object
+                            self.sut.transitionState(InputFileParser.ParseState.Result.SUCCESS)
+                            mock_RoverInstructionsState.called.should.equal(True)
+                            self.sut.current_state.should.be(stub_object)
+                with context('if result argument is FAIL'):
+                    with it('should not change the current state'):
+                        current_state = self.sut.current_state
+                        self.sut.transitionState(InputFileParser.ParseState.Result.FAIL)
+                        self.sut.current_state.should.be(current_state)
+            with context('if current state is RoverInstructionsState,'):
+                with before.each:
+                    self.sut.current_state = InputFileParser.RoverInstructionsState(self.sut.command_callback, ('Rover1', 1, 2, 'N'))
+                with context('if result argument is SUCCESS'):
+                    with it('should set the current state to RoverLandingState'):
+                        with patch('InputFileParser.InputFileParser.RoverLandingState') as mock_RoverLandingState:
+                            stub_object = Mock()
+                            mock_RoverLandingState.return_value = stub_object
+                            self.sut.transitionState(InputFileParser.ParseState.Result.SUCCESS)
+                            mock_RoverLandingState.called.should.equal(True)
+                            self.sut.current_state.should.be(stub_object)
+                with context('if result argument is FAIL'):
+                    with it('should set the current state to RoverLandingState'):
+                        with patch('InputFileParser.InputFileParser.RoverLandingState') as mock_RoverLandingState:
+                            stub_object = Mock()
+                            mock_RoverLandingState.return_value = stub_object
+                            self.sut.transitionState(InputFileParser.ParseState.Result.FAIL)
+                            mock_RoverLandingState.called.should.equal(True)
+                            self.sut.current_state.should.be(stub_object)
 
 with context(InputFileParser.ParseState):
     with it('should exist and take a single argument'):

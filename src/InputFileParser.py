@@ -4,9 +4,8 @@ import re
 
 class InputFileParser:
 
-    class FileStates(Enum):
-        EOF = -1
-        OK = 0
+    class BadFileFormatError(BaseException):
+        pass
 
     class ParseState:
         class Result(Enum):
@@ -69,16 +68,14 @@ class InputFileParser:
             return self.Result.SUCCESS
 
     def __init__(self, command_callback):
+        self.command_callback = command_callback
         self.current_state = InputFileParser.PlateauConfigState(command_callback)
 
     def getAllInputLines(self):
         pass
 
     def parseInputFile(self):
-        read_state = InputFileParser.FileStates.OK
-        for read_state, input_line in self.getAllInputLines():
-            if read_state is InputFileParser.FileStates.EOF:
-                break
+        for input_line in self.getAllInputLines():
             self.parseInputLine(input_line)
 
     def parseInputLine(self, input_line):
@@ -86,4 +83,26 @@ class InputFileParser:
         self.transitionState(result)
 
     def transitionState(self, current_state_result):
-        pass
+        invalid_result = False
+        if type(self.current_state) is InputFileParser.PlateauConfigState:
+            if current_state_result is InputFileParser.ParseState.Result.SUCCESS:
+                self.current_state = InputFileParser.RoverLandingState(self.command_callback)
+            elif current_state_result is InputFileParser.ParseState.Result.FAIL:
+                raise InputFileParser.BadFileFormatError()
+            else:
+                invalid_result = True
+        elif type(self.current_state) is InputFileParser.RoverLandingState:
+            if current_state_result is InputFileParser.ParseState.Result.SUCCESS:
+                self.current_state = InputFileParser.RoverInstructionsState(self.command_callback)
+            elif current_state_result is not InputFileParser.ParseState.Result.FAIL:
+                invalid_result = True
+        elif type(self.current_state) is InputFileParser.RoverInstructionsState:
+            if (current_state_result is InputFileParser.ParseState.Result.SUCCESS or
+                current_state_result is InputFileParser.ParseState.Result.FAIL):
+                self.current_state = InputFileParser.RoverLandingState(self.command_callback)
+            else:
+                invalid_result = True
+
+        if invalid_result is True:
+            raise ValueError('Invalid state_result {0} for state {1}.'.format(current_state_result, type(self.current_state)))
+
